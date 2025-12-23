@@ -12,6 +12,10 @@ router.use('/income-categories', routes.incomeCategory);
 router.use('/income', routes.income);
 router.use('/expense-categories', routes.expenseCategory);
 router.use('/expense', routes.expense);
+router.use('/debt', routes.debt);
+router.use('/bank', routes.bank);
+router.use('/credit-card', routes.creditCard);
+router.use('/dashboard', routes.dashboard);
 router.use('/inventory', routes.inventory);
 
 

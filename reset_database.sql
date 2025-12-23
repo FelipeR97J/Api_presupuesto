@@ -15,6 +15,9 @@ DROP TABLE IF EXISTS `categories`;
 DROP TABLE IF EXISTS `instruments`;
 DROP TABLE IF EXISTS `incomes`;
 DROP TABLE IF EXISTS `expenses`;
+DROP TABLE IF EXISTS `debts`;
+DROP TABLE IF EXISTS `credit_cards`;
+DROP TABLE IF EXISTS `banks`;
 DROP TABLE IF EXISTS `income_categories`;
 DROP TABLE IF EXISTS `expense_categories`;
 DROP TABLE IF EXISTS `inventory_items`;
@@ -146,6 +149,58 @@ CREATE TABLE `expense_categories` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================
+-- CREAR TABLA: banks
+-- ============================================
+CREATE TABLE `banks` (
+  `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `userId` INT NOT NULL,
+  `name` VARCHAR(100) NOT NULL,
+  `id_estado` INT DEFAULT 0,
+  `createdAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updatedAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `deletedAt` TIMESTAMP NULL,
+  FOREIGN KEY (`userId`) REFERENCES `users`(`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  FOREIGN KEY (`id_estado`) REFERENCES `estados`(`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================
+-- CREAR TABLA: credit_cards
+-- ============================================
+CREATE TABLE `credit_cards` (
+  `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `userId` INT NOT NULL,
+  `bankId` INT NOT NULL,
+  `name` VARCHAR(100) NOT NULL,
+  `id_estado` INT DEFAULT 0,
+  `createdAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updatedAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `deletedAt` TIMESTAMP NULL,
+  FOREIGN KEY (`userId`) REFERENCES `users`(`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  FOREIGN KEY (`bankId`) REFERENCES `banks`(`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  FOREIGN KEY (`id_estado`) REFERENCES `estados`(`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================
+-- CREAR TABLE: debts
+-- ============================================
+CREATE TABLE `debts` (
+  `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `userId` INT NOT NULL,
+  `creditCardId` INT NOT NULL,
+  `totalAmount` DECIMAL(10, 2) NOT NULL,
+  `installments` INT NOT NULL,
+  `description` VARCHAR(255),
+  `startDate` DATE,
+  `id_estado` INT DEFAULT 0,
+  `createdAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updatedAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `deletedAt` TIMESTAMP NULL,
+  FOREIGN KEY (`userId`) REFERENCES `users`(`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  FOREIGN KEY (`creditCardId`) REFERENCES `credit_cards`(`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  FOREIGN KEY (`id_estado`) REFERENCES `estados`(`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================
 -- CREAR TABLA: expenses
 -- ============================================
 CREATE TABLE `expenses` (
@@ -153,11 +208,13 @@ CREATE TABLE `expenses` (
   `amount` DECIMAL(10, 2) NOT NULL,
   `description` VARCHAR(255),
   `categoryId` INT,
+  `debtId` INT,
   `id_estado` INT DEFAULT 0,
   `createdAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   `updatedAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `deletedAt` TIMESTAMP NULL,
   FOREIGN KEY (`categoryId`) REFERENCES `expense_categories`(`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  FOREIGN KEY (`debtId`) REFERENCES `debts`(`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   FOREIGN KEY (`id_estado`) REFERENCES `estados`(`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

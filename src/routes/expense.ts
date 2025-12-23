@@ -21,7 +21,7 @@ router.post('/', authMiddleware, async (req: AuthRequest, res) => {
     if (!req.user) {
       return res.status(401).json(formatError(ErrorCodes.AUTH.TOKEN_INVALID));
     }
-    
+
     // Validar que monto sea obligatorio
     if (!amount) {
       return res.status(400).json(formatError(ErrorCodes.EXPENSE.AMOUNT_REQUIRED));
@@ -34,7 +34,7 @@ router.post('/', authMiddleware, async (req: AuthRequest, res) => {
 
     // Verificar que la categoría existe y está activa
     const category = await ExpenseCategory.findOne({
-      where: { 
+      where: {
         id: categoryId,
         id_estado: 1, // 1 = Activo
       },
@@ -43,7 +43,7 @@ router.post('/', authMiddleware, async (req: AuthRequest, res) => {
     if (!category) {
       return res.status(404).json(formatError(ErrorCodes.EXPENSE.CATEGORY_NOT_FOUND));
     }
-    
+
     // Crear un nuevo registro de gasto con userId del usuario autenticado
     const expense = await Expense.create({
       userId: req.user.id,
@@ -61,6 +61,8 @@ router.post('/', authMiddleware, async (req: AuthRequest, res) => {
     res.status(500).json(formatError(ErrorCodes.SERVER_ERROR));
   }
 });
+
+
 
 /**
  * Obtener todos los gastos del usuario autenticado
@@ -91,48 +93,58 @@ router.get('/', authMiddleware, async (req: AuthRequest, res) => {
     // Obtener parámetros de paginación
     let page = parseInt(req.query.page as string) || 1;
     let limit = parseInt(req.query.limit as string) || 10;
+    const year = parseInt(req.query.year as string);
+    const month = parseInt(req.query.month as string);
 
-    // Validar valores
+    // Validar valores de paginación
     if (page < 1) page = 1;
     if (limit < 1) limit = 10;
     if (limit > 100) limit = 100; // Máximo 100 registros por página
 
     const offset = (page - 1) * limit;
 
-    // Obtener total de gastos (activos e inactivos) del usuario
-    const total = await Expense.count({
-      where: { 
-        userId: req.user.id, 
-        // id_estado: 1, // Eliminado filtro para contar todos
-      },
-    });
+    // Construir cláusula WHERE
+    const whereClause: any = {
+      userId: req.user.id
+    };
 
-    const expenses = await Expense.findAll({
-      where: { 
-        userId: req.user.id, 
-        // id_estado: 1, // Eliminado filtro para mostrar todos
-      },
+    // Filtro por fecha (Mes y Año)
+    if (year && month) {
+      // Javascript Date mes es base 0 (0-11)
+      const startDate = new Date(year, month - 1, 1);
+      const endDate = new Date(year, month, 0, 23, 59, 59); // Último día del mes
+
+      const { Op } = require('sequelize');
+      whereClause.date = {
+        [Op.between]: [startDate, endDate]
+      };
+    }
+
+    // Obtener total de gastos y registros
+    const { count, rows } = await Expense.findAndCountAll({
+      where: whereClause,
       include: ['category'],
-      order: [['id_estado', 'ASC'], ['description', 'ASC']], // Activos primero, luego alfabético por descripción
+      order: [['date', 'DESC'], ['createdAt', 'DESC']], // Ordenar por fecha del gasto
       limit,
       offset,
     });
 
     // Calcular información de paginación
-    const totalPages = Math.ceil(total / limit);
+    const totalPages = Math.ceil(count / limit);
 
     res.status(200).json({
-      data: expenses,
+      data: rows,
       pagination: {
         page,
         limit,
-        total,
+        total: count,
         totalPages,
         hasNextPage: page < totalPages,
         hasPrevPage: page > 1,
       },
     });
   } catch (error) {
+    console.error('Error getting expenses:', error);
     res.status(500).json(formatError(ErrorCodes.SERVER_ERROR));
   }
 });
@@ -159,7 +171,7 @@ router.get('/:id', authMiddleware, async (req: AuthRequest, res) => {
       },
       include: ['category'],
     });
-    
+
     if (!expense) {
       return res.status(404).json(formatError(ErrorCodes.EXPENSE.EXPENSE_NOT_FOUND));
     }
@@ -200,7 +212,7 @@ router.patch('/:id', authMiddleware, async (req: AuthRequest, res) => {
     // Validar categoría si se proporciona
     if (categoryId !== undefined) {
       const category = await ExpenseCategory.findOne({
-        where: { 
+        where: {
           id: categoryId,
           id_estado: 1, // 1 = Activo
         },
@@ -219,10 +231,10 @@ router.patch('/:id', authMiddleware, async (req: AuthRequest, res) => {
     if (date !== undefined) expense.set('date', date);
 
     await expense.save();
-    
+
     // Recargar para incluir la categoría
     await expense.reload({ include: ['category'] });
-    
+
     res.status(200).json(expense);
   } catch (error) {
     res.status(500).json(formatError(ErrorCodes.SERVER_ERROR));
@@ -257,7 +269,7 @@ router.delete('/:id', authMiddleware, async (req: AuthRequest, res) => {
     // Soft delete real usando deletedAt
     await expense.destroy();
 
-    res.status(200).json({ 
+    res.status(200).json({
       message: 'Expense deleted successfully',
       expense: {
         id: expense.get('id'),

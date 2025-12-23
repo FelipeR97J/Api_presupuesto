@@ -3,7 +3,9 @@
   "module": "index.ts",
   "type": "module",
   "scripts": {
-    "dev": "bun run --hot src/index.ts"
+    "dev": "bun run --hot src/index.ts",
+    "db:seed": "bun run tools/seed_db.ts",
+    "db:reset": "bun run tools/force_reset_db.ts"
   },
   "devDependencies": {
     "@types/bcryptjs": "^3.0.0",

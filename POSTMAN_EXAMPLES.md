@@ -1449,9 +1449,11 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 **QUÉ ENVÍAS:**
 - `page` (Number, OPCIONAL, default=1): Número de página (comienza en 1)
 - `limit` (Number, OPCIONAL, default=10): Cantidad de registros por página (máximo 100)
+- `year` (Number, OPCIONAL): Filtrar por año (ej: 2024)
+- `month` (Number, OPCIONAL): Filtrar por mes (1-12)
 
 ```
-GET /expense/?page=1&limit=10
+GET /expense/?page=1&limit=10&year=2024&month=5
 Content-Type: application/json
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
@@ -2634,4 +2636,596 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 ---
 
-**Última actualización: 2025-12-02**
+## 💳 DEUDAS / COMPRAS CON CUOTAS
+
+### 0️⃣ INFORMACIÓN SOBRE DEUDAS
+
+> ℹ️ **¿QUÉ SON LAS DEUDAS?**
+> - Las **Deudas** permiten gestionar compras pagadas en cuotas (instalmentos)
+> - Al crear una deuda, se generan automáticamente **gastos mensuales** (uno por cada cuota)
+> - Cada cuota se registra como un gasto individual vinculado a la deuda
+> - Puedes editar la deuda completa y las cuotas se regenerarán automáticamente
+> - Al eliminar una deuda, se eliminan todas sus cuotas asociadas
+
+> ⚠️ **REQUISITOS PREVIOS:**
+> - Debes tener al menos una **tarjeta de crédito** registrada
+> - La tarjeta debe estar vinculada a un **banco**
+> - Debes tener al menos una **categoría de gasto** activa
+
+> 📋 **CAMPOS DE UNA DEUDA:**
+> - `creditCardId`: ID de la tarjeta de crédito usada
+> - `totalAmount`: Monto total de la compra
+> - `installments`: Número de cuotas (ej: 6, 12, 24)
+> - `categoryId`: Categoría del gasto (ej: Tecnología, Hogar, etc.)
+> - `description`: Descripción de la compra (ej: "PlayStation 5")
+> - `startDate`: Fecha de inicio del pago (opcional, por defecto hoy)
+
+---
+
+### 1️⃣ CREAR DEUDA CON CUOTAS
+
+**QUÉ ENVÍAS:**
+- `creditCardId` (Number, REQUERIDO): ID de la tarjeta de crédito
+- `totalAmount` (Number, REQUERIDO): Monto total de la compra
+- `installments` (Number, REQUERIDO): Número de cuotas
+- `categoryId` (Number, REQUERIDO): ID de la categoría de gasto
+- `description` (String, REQUERIDO): Descripción de la compra
+- `startDate` (String "YYYY-MM-DD", OPCIONAL): Fecha de inicio (por defecto hoy)
+
+```
+POST /debt
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+{
+  "creditCardId": 1,
+  "totalAmount": 600000,
+  "installments": 6,
+  "categoryId": 3,
+  "description": "PlayStation 5",
+  "startDate": "2025-12-01"
+}
+```
+
+**QUÉ RETORNA (201):** Deuda creada con todas sus cuotas generadas
+```json
+{
+  "id": 1,
+  "userId": 5,
+  "creditCardId": 1,
+  "totalAmount": "600000.00",
+  "installments": 6,
+  "description": "PlayStation 5",
+  "startDate": "2025-12-01T00:00:00.000Z",
+  "id_estado": 1,
+  "createdAt": "2025-12-23T10:30:00.000Z",
+  "updatedAt": "2025-12-23T10:30:00.000Z",
+  "deletedAt": null,
+  "expenses": [
+    {
+      "id": 101,
+      "userId": 5,
+      "categoryId": 3,
+      "debtId": 1,
+      "amount": "100000.00",
+      "description": "PlayStation 5 - Banco Estado - Cuenta Pro - Cuota 1/6",
+      "date": "2025-12-01T00:00:00.000Z",
+      "id_estado": 1,
+      "createdAt": "2025-12-23T10:30:00.000Z",
+      "updatedAt": "2025-12-23T10:30:00.000Z"
+    },
+    {
+      "id": 102,
+      "userId": 5,
+      "categoryId": 3,
+      "debtId": 1,
+      "amount": "100000.00",
+      "description": "PlayStation 5 - Banco Estado - Cuenta Pro - Cuota 2/6",
+      "date": "2026-01-01T00:00:00.000Z",
+      "id_estado": 1,
+      "createdAt": "2025-12-23T10:30:00.000Z",
+      "updatedAt": "2025-12-23T10:30:00.000Z"
+    },
+    {
+      "id": 103,
+      "userId": 5,
+      "categoryId": 3,
+      "debtId": 1,
+      "amount": "100000.00",
+      "description": "PlayStation 5 - Banco Estado - Cuenta Pro - Cuota 3/6",
+      "date": "2026-02-01T00:00:00.000Z",
+      "id_estado": 1,
+      "createdAt": "2025-12-23T10:30:00.000Z",
+      "updatedAt": "2025-12-23T10:30:00.000Z"
+    },
+    {
+      "id": 104,
+      "userId": 5,
+      "categoryId": 3,
+      "debtId": 1,
+      "amount": "100000.00",
+      "description": "PlayStation 5 - Banco Estado - Cuenta Pro - Cuota 4/6",
+      "date": "2026-03-01T00:00:00.000Z",
+      "id_estado": 1,
+      "createdAt": "2025-12-23T10:30:00.000Z",
+      "updatedAt": "2025-12-23T10:30:00.000Z"
+    },
+    {
+      "id": 105,
+      "userId": 5,
+      "categoryId": 3,
+      "debtId": 1,
+      "amount": "100000.00",
+      "description": "PlayStation 5 - Banco Estado - Cuenta Pro - Cuota 5/6",
+      "date": "2026-04-01T00:00:00.000Z",
+      "id_estado": 1,
+      "createdAt": "2025-12-23T10:30:00.000Z",
+      "updatedAt": "2025-12-23T10:30:00.000Z"
+    },
+    {
+      "id": 106,
+      "userId": 5,
+      "categoryId": 3,
+      "debtId": 1,
+      "amount": "100000.00",
+      "description": "PlayStation 5 - Banco Estado - Cuenta Pro - Cuota 6/6",
+      "date": "2026-05-01T00:00:00.000Z",
+      "id_estado": 1,
+      "createdAt": "2025-12-23T10:30:00.000Z",
+      "updatedAt": "2025-12-23T10:30:00.000Z"
+    }
+  ],
+  "creditCard": {
+    "id": 1,
+    "name": "Cuenta Pro",
+    "bank": {
+      "id": 1,
+      "name": "Banco Estado"
+    }
+  }
+}
+```
+
+**Respuesta Error - Campos Faltantes (400):**
+```json
+{
+  "error": "Missing required fields"
+}
+```
+
+**Respuesta Error - Tarjeta No Encontrada (404):**
+```json
+{
+  "error": "Credit Card not found"
+}
+```
+
+> 💡 **CÓMO FUNCIONA:**
+> - El sistema divide automáticamente el `totalAmount` entre el número de `installments`
+> - Cada cuota se crea como un gasto mensual, incrementando un mes desde `startDate`
+> - La descripción de cada cuota incluye: Descripción + Banco + Tarjeta + "Cuota X/Y"
+> - Todas las cuotas se vinculan a la deuda mediante el campo `debtId`
+
+---
+
+### 2️⃣ LISTAR TODAS LAS DEUDAS
+
+**QUÉ ENVÍAS:**
+- Query params opcionales:
+  - `page` (Number, OPCIONAL): Número de página (default: 1)
+  - `limit` (Number, OPCIONAL): Registros por página (default: 10)
+  - `year` (Number, OPCIONAL): Filtrar por año de inicio
+  - `month` (Number, OPCIONAL): Filtrar por mes de inicio (1-12)
+
+```
+GET /debt?page=1&limit=10
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+// Sin body
+```
+
+**QUÉ RETORNA (200):** Lista paginada de deudas
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "userId": 5,
+      "creditCardId": 1,
+      "totalAmount": "600000.00",
+      "installments": 6,
+      "description": "PlayStation 5",
+      "startDate": "2025-12-01T00:00:00.000Z",
+      "id_estado": 1,
+      "createdAt": "2025-12-23T10:30:00.000Z",
+      "updatedAt": "2025-12-23T10:30:00.000Z",
+      "deletedAt": null,
+      "creditCard": {
+        "id": 1,
+        "name": "Cuenta Pro",
+        "bank": {
+          "id": 1,
+          "name": "Banco Estado"
+        }
+      },
+      "categoryId": 3,
+      "category": {
+        "id": 3,
+        "name": "Tecnología",
+        "id_estado": 1
+      }
+    },
+    {
+      "id": 2,
+      "userId": 5,
+      "creditCardId": 2,
+      "totalAmount": "1200000.00",
+      "installments": 12,
+      "description": "Notebook Lenovo",
+      "startDate": "2025-11-15T00:00:00.000Z",
+      "id_estado": 1,
+      "createdAt": "2025-11-15T14:20:00.000Z",
+      "updatedAt": "2025-11-15T14:20:00.000Z",
+      "deletedAt": null,
+      "creditCard": {
+        "id": 2,
+        "name": "Visa Gold",
+        "bank": {
+          "id": 2,
+          "name": "Banco Santander"
+        }
+      },
+      "categoryId": 3,
+      "category": {
+        "id": 3,
+        "name": "Tecnología",
+        "id_estado": 1
+      }
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 2,
+    "totalPages": 1
+  }
+}
+```
+
+**Filtrar por mes y año:**
+```
+GET /debt?year=2025&month=12
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+// Sin body
+```
+
+> 📝 **NOTA:**
+> - Las deudas se ordenan por fecha de creación (más recientes primero)
+> - El filtro por `year` y `month` se aplica a la fecha de inicio (`startDate`)
+> - Solo se muestran las deudas del usuario autenticado
+
+---
+
+### 3️⃣ OBTENER DETALLE DE UNA DEUDA
+
+**QUÉ ENVÍAS:**
+- `:id` en la URL (ID de la deuda)
+
+```
+GET /debt/1
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+// Sin body
+```
+
+**QUÉ RETORNA (200):** Deuda completa con todas sus cuotas
+```json
+{
+  "id": 1,
+  "userId": 5,
+  "creditCardId": 1,
+  "totalAmount": "600000.00",
+  "installments": 6,
+  "description": "PlayStation 5",
+  "startDate": "2025-12-01T00:00:00.000Z",
+  "id_estado": 1,
+  "createdAt": "2025-12-23T10:30:00.000Z",
+  "updatedAt": "2025-12-23T10:30:00.000Z",
+  "deletedAt": null,
+  "expenses": [
+    {
+      "id": 101,
+      "amount": "100000.00",
+      "date": "2025-12-01T00:00:00.000Z",
+      "description": "PlayStation 5 - Banco Estado - Cuenta Pro - Cuota 1/6",
+      "id_estado": 1,
+      "categoryId": 3,
+      "category": {
+        "id": 3,
+        "name": "Tecnología",
+        "description": "Gastos en tecnología y electrónica",
+        "id_estado": 1
+      }
+    },
+    {
+      "id": 102,
+      "amount": "100000.00",
+      "date": "2026-01-01T00:00:00.000Z",
+      "description": "PlayStation 5 - Banco Estado - Cuenta Pro - Cuota 2/6",
+      "id_estado": 1,
+      "categoryId": 3,
+      "category": {
+        "id": 3,
+        "name": "Tecnología",
+        "description": "Gastos en tecnología y electrónica",
+        "id_estado": 1
+      }
+    },
+    {
+      "id": 103,
+      "amount": "100000.00",
+      "date": "2026-02-01T00:00:00.000Z",
+      "description": "PlayStation 5 - Banco Estado - Cuenta Pro - Cuota 3/6",
+      "id_estado": 1,
+      "categoryId": 3,
+      "category": {
+        "id": 3,
+        "name": "Tecnología",
+        "description": "Gastos en tecnología y electrónica",
+        "id_estado": 1
+      }
+    },
+    {
+      "id": 104,
+      "amount": "100000.00",
+      "date": "2026-03-01T00:00:00.000Z",
+      "description": "PlayStation 5 - Banco Estado - Cuenta Pro - Cuota 4/6",
+      "id_estado": 1,
+      "categoryId": 3,
+      "category": {
+        "id": 3,
+        "name": "Tecnología",
+        "description": "Gastos en tecnología y electrónica",
+        "id_estado": 1
+      }
+    },
+    {
+      "id": 105,
+      "amount": "100000.00",
+      "date": "2026-04-01T00:00:00.000Z",
+      "description": "PlayStation 5 - Banco Estado - Cuenta Pro - Cuota 5/6",
+      "id_estado": 1,
+      "categoryId": 3,
+      "category": {
+        "id": 3,
+        "name": "Tecnología",
+        "description": "Gastos en tecnología y electrónica",
+        "id_estado": 1
+      }
+    },
+    {
+      "id": 106,
+      "amount": "100000.00",
+      "date": "2026-05-01T00:00:00.000Z",
+      "description": "PlayStation 5 - Banco Estado - Cuenta Pro - Cuota 6/6",
+      "id_estado": 1,
+      "categoryId": 3,
+      "category": {
+        "id": 3,
+        "name": "Tecnología",
+        "description": "Gastos en tecnología y electrónica",
+        "id_estado": 1
+      }
+    }
+  ],
+  "creditCard": {
+    "id": 1,
+    "name": "Cuenta Pro",
+    "bank": {
+      "id": 1,
+      "name": "Banco Estado"
+    }
+  },
+  "categoryId": 3,
+  "category": {
+    "id": 3,
+    "name": "Tecnología",
+    "description": "Gastos en tecnología y electrónica",
+    "id_estado": 1
+  }
+}
+```
+
+**Respuesta Error - Deuda No Encontrada (404):**
+```json
+{
+  "error": "Debt not found"
+}
+```
+
+> 💡 **USO:**
+> - Este endpoint es útil para ver el detalle completo de una deuda
+> - Muestra todas las cuotas ordenadas por fecha (de la más antigua a la más reciente)
+> - Incluye información completa de la tarjeta, banco y categoría
+
+---
+
+### 4️⃣ EDITAR DEUDA
+
+**QUÉ ENVÍAS:**
+- `:id` en la URL (ID de la deuda)
+- Campos opcionales a actualizar:
+  - `totalAmount` (Number, OPCIONAL): Nuevo monto total
+  - `installments` (Number, OPCIONAL): Nuevo número de cuotas
+  - `startDate` (String "YYYY-MM-DD", OPCIONAL): Nueva fecha de inicio
+  - `creditCardId` (Number, OPCIONAL): Nueva tarjeta de crédito
+  - `description` (String, OPCIONAL): Nueva descripción
+  - `categoryId` (Number, OPCIONAL): Nueva categoría
+
+```
+PUT /debt/1
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+{
+  "totalAmount": 720000,
+  "installments": 12,
+  "description": "PlayStation 5 + Juegos"
+}
+```
+
+**QUÉ RETORNA (200):** Deuda actualizada con cuotas regeneradas
+```json
+{
+  "id": 1,
+  "userId": 5,
+  "creditCardId": 1,
+  "totalAmount": "720000.00",
+  "installments": 12,
+  "description": "PlayStation 5 + Juegos",
+  "startDate": "2025-12-01T00:00:00.000Z",
+  "id_estado": 1,
+  "createdAt": "2025-12-23T10:30:00.000Z",
+  "updatedAt": "2025-12-23T11:45:00.000Z",
+  "deletedAt": null,
+  "expenses": [
+    {
+      "id": 107,
+      "userId": 5,
+      "categoryId": 3,
+      "debtId": 1,
+      "amount": "60000.00",
+      "description": "PlayStation 5 + Juegos - Banco Estado - Cuenta Pro - Cuota 1/12",
+      "date": "2025-12-01T00:00:00.000Z",
+      "id_estado": 1
+    },
+    {
+      "id": 108,
+      "userId": 5,
+      "categoryId": 3,
+      "debtId": 1,
+      "amount": "60000.00",
+      "description": "PlayStation 5 + Juegos - Banco Estado - Cuenta Pro - Cuota 2/12",
+      "date": "2026-01-01T00:00:00.000Z",
+      "id_estado": 1
+    }
+    // ... (10 cuotas más)
+  ],
+  "creditCard": {
+    "id": 1,
+    "name": "Cuenta Pro",
+    "bank": {
+      "id": 1,
+      "name": "Banco Estado"
+    }
+  }
+}
+```
+
+**Respuesta Error - Deuda No Encontrada (404):**
+```json
+{
+  "error": "Debt not found"
+}
+```
+
+**Respuesta Error - Tarjeta No Encontrada (404):**
+```json
+{
+  "error": "New Credit Card not found"
+}
+```
+
+> ⚠️ **IMPORTANTE - REGENERACIÓN DE CUOTAS:**
+> - Si cambias `totalAmount`, `installments`, `startDate` o `creditCardId`, las cuotas se **REGENERAN COMPLETAMENTE**
+> - Las cuotas antiguas se eliminan (soft delete) y se crean nuevas
+> - Si solo cambias `description`, la deuda se actualiza pero las cuotas NO se regeneran
+> - La regeneración recalcula el monto por cuota y las fechas automáticamente
+
+---
+
+### 5️⃣ ELIMINAR DEUDA
+
+**QUÉ ENVÍAS:**
+- `:id` en la URL (ID de la deuda)
+
+```
+DELETE /debt/1
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+// Sin body
+```
+
+**QUÉ RETORNA (200):** Confirmación de eliminación
+```json
+{
+  "message": "Debt and associated expenses deleted successfully"
+}
+```
+
+**Respuesta Error - Deuda No Encontrada (404):**
+```json
+{
+  "error": "Debt not found"
+}
+```
+
+> ⚠️ **IMPORTANTE - ELIMINACIÓN EN CASCADA:**
+> - Al eliminar una deuda, se eliminan **TODAS** sus cuotas asociadas
+> - La eliminación es lógica (soft delete), los datos se mantienen en la BD para auditoría
+> - Las cuotas eliminadas dejan de aparecer en reportes y listados de gastos
+> - Esta acción NO es reversible desde la API (solo desde la base de datos)
+
+---
+
+## 📊 CASOS DE USO COMUNES
+
+### Ejemplo 1: Compra de Tecnología en 6 Cuotas
+```json
+POST /debt
+{
+  "creditCardId": 1,
+  "totalAmount": 600000,
+  "installments": 6,
+  "categoryId": 3,
+  "description": "PlayStation 5",
+  "startDate": "2025-12-01"
+}
+```
+**Resultado:** 6 gastos mensuales de $100,000 cada uno
+
+---
+
+### Ejemplo 2: Compra de Electrodoméstico en 12 Cuotas
+```json
+POST /debt
+{
+  "creditCardId": 2,
+  "totalAmount": 480000,
+  "installments": 12,
+  "categoryId": 5,
+  "description": "Refrigerador Samsung",
+  "startDate": "2025-11-01"
+}
+```
+**Resultado:** 12 gastos mensuales de $40,000 cada uno
+
+---
+
+### Ejemplo 3: Cambiar de 6 a 12 Cuotas
+```json
+PUT /debt/1
+{
+  "installments": 12
+}
+```
+**Resultado:** Las 6 cuotas antiguas se eliminan y se crean 12 nuevas cuotas con el monto recalculado
+
+---
+
+**Última actualización: 2025-12-23**

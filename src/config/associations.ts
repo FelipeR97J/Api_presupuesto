@@ -31,9 +31,12 @@ export function setupAssociations() {
   const { InventoryItem } = require('../entityDB/mysql/inventoryItem');
   const { Role } = require('../entityDB/mysql/role');
   const { Estado } = require('../entityDB/mysql/estado');
-  
+  const { Debt } = require('../entityDB/mysql/debt');
+  const { Bank } = require('../entityDB/mysql/bank');
+  const { CreditCard } = require('../entityDB/mysql/creditCard');
+
   // ==================== ESTADOS (Relación One-to-Many) ====================
-  
+
   /**
    * Relación: User belongsTo Estado
    * Un usuario tiene EXACTAMENTE UN estado (activo/inactivo)
@@ -98,7 +101,7 @@ export function setupAssociations() {
   });
 
   // ==================== ROLES (Relación One-to-Many) ====================
-  
+
   /**
    * Relación: User belongsTo Role
    * Un usuario tiene EXACTAMENTE UN rol (almacenado en id_rol)
@@ -116,9 +119,9 @@ export function setupAssociations() {
     foreignKey: 'id_rol',
     as: 'users',
   });
-  
+
   // ==================== INGRESOS ====================
-  
+
   /**
    * Relación: User hasMany Income
    * Un usuario puede tener múltiples ingresos
@@ -217,4 +220,67 @@ export function setupAssociations() {
     foreignKey: 'userId',
     as: 'user',
   });
+
+  // ==================== DEUDAS ====================
+
+  /**
+   * Relación: User hasMany Debt
+   */
+  (User as any).hasMany(Debt, {
+    foreignKey: 'userId',
+    as: 'debts',
+    onDelete: 'CASCADE',
+  });
+
+  (Debt as any).belongsTo(User, {
+    foreignKey: 'userId',
+    as: 'user',
+  });
+
+  /**
+   * Relación: Debt belongsTo Estado
+   */
+  (Debt as any).belongsTo(Estado, {
+    foreignKey: 'id_estado',
+    as: 'estado',
+  });
+
+  /**
+   * Relación: Debt hasMany Expense (Cuotas)
+   */
+  (Debt as any).hasMany(Expense, {
+    foreignKey: 'debtId',
+    as: 'expenses',
+    onDelete: 'CASCADE',
+  });
+
+  (Expense as any).belongsTo(Debt, {
+    foreignKey: 'debtId',
+    as: 'debt',
+  });
+
+  /**
+   * Relación: Debt belongsTo CreditCard
+   */
+  (Debt as any).belongsTo(CreditCard, {
+    foreignKey: 'creditCardId',
+    as: 'creditCard',
+  });
+
+  // ==================== BANCOS Y TARJETAS ====================
+
+  // USER -> BANKS
+  (User as any).hasMany(Bank, { foreignKey: 'userId', as: 'banks', onDelete: 'CASCADE' });
+  (Bank as any).belongsTo(User, { foreignKey: 'userId', as: 'user' });
+  (Bank as any).belongsTo(Estado, { foreignKey: 'id_estado', as: 'estado' });
+
+  // BANK -> CREDIT CARDS
+  (Bank as any).hasMany(CreditCard, { foreignKey: 'bankId', as: 'creditCards', onDelete: 'CASCADE' });
+  (CreditCard as any).belongsTo(Bank, { foreignKey: 'bankId', as: 'bank' });
+
+  // USER -> CREDIT CARDS
+  (User as any).hasMany(CreditCard, { foreignKey: 'userId', as: 'creditCards', onDelete: 'CASCADE' });
+  (CreditCard as any).belongsTo(User, { foreignKey: 'userId', as: 'user' });
+  (CreditCard as any).belongsTo(Estado, { foreignKey: 'id_estado', as: 'estado' });
+
 }

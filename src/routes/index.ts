@@ -8,6 +8,10 @@ import auth from './auth';
 import admin from './admin';
 import roles from './roles';
 import estado from './estado';
+import debt from './debt';
+import bank from './bank';
+import creditCard from './creditCard';
+import dashboard from './dashboard';
 
 export const routes = {
   root,
@@ -20,4 +24,8 @@ export const routes = {
   admin,
   roles,
   estado,
+  debt,
+  bank,
+  creditCard,
+  dashboard,
 };

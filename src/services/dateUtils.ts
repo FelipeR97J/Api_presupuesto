@@ -15,22 +15,23 @@
  * calculateAge('1997-05-15') // Devuelve edad actual
  * calculateAge(new Date('1997-05-15')) // Devuelve edad actual
  */
-export const calculateAge = (birthDate: Date | string): number => {
+export const calculateAge = (birthDate: Date | string | null | undefined): number => {
+  if (!birthDate) return 0;
   // Convertir a Date si es string
   const birth = typeof birthDate === 'string' ? new Date(birthDate) : birthDate;
-  
+
   // Obtener fecha actual
   const today = new Date();
-  
+
   // Calcular diferencia de años
   let age = today.getFullYear() - birth.getFullYear();
-  
+
   // Ajustar si el cumpleaños no ha ocurrido este año
   const monthDifference = today.getMonth() - birth.getMonth();
   if (monthDifference < 0 || (monthDifference === 0 && today.getDate() < birth.getDate())) {
     age--;
   }
-  
+
   return age;
 };
 
@@ -42,13 +43,13 @@ export const calculateAge = (birthDate: Date | string): number => {
  */
 export const formatBirthDate = (birthDate: Date | string): string => {
   const date = typeof birthDate === 'string' ? new Date(birthDate) : birthDate;
-  
+
   const options: Intl.DateTimeFormatOptions = {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
   };
-  
+
   return new Intl.DateTimeFormat('es-CL', options).format(date);
 };
 
@@ -68,24 +69,24 @@ export const isValidBirthDate = (birthDate: string): boolean => {
   if (!dateRegex.test(birthDate)) {
     return false;
   }
-  
+
   const date = new Date(birthDate);
   const now = new Date();
-  
+
   // Debe ser una fecha válida
   if (isNaN(date.getTime())) {
     return false;
   }
-  
+
   // No puede ser en el futuro
   if (date > now) {
     return false;
   }
-  
+
   // No puede ser anterior a 1900
   if (date.getFullYear() < 1900) {
     return false;
   }
-  
+
   return true;
 };

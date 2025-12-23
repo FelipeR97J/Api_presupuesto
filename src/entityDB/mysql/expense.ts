@@ -43,13 +43,23 @@ export const Expense = sequelize.define(
         key: 'id', // Columna relacionada
       },
     },
-    
+
+    // Campo DebtId: Relación con la tabla debts (Opcional, solo si es cuota)
+    debtId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'debts',
+        key: 'id',
+      },
+    },
+
     // Campo Amount: Monto del gasto
     amount: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false, // Obligatorio
     },
-    
+
     // Campo Description: Descripción detallada del gasto (Ej: "Compra en supermercado")
     description: {
       type: DataTypes.STRING,
@@ -68,13 +78,13 @@ export const Expense = sequelize.define(
         key: 'id',
       },
     },
-    
+
     // Campo Date: Fecha del gasto
     date: {
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW,
     },
-    
+
     // Campos de auditoría automáticos
     createdAt: {
       type: DataTypes.DATE,

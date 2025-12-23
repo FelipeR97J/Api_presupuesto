@@ -1,0 +1,116 @@
+# Plan de Desarrollo Backend - Dashboard 2.0
+
+Este documento detalla los nuevos endpoints y lógica requerida en el Backend para potenciar el Dashboard con gráficos, comparativas y proyecciones.
+
+## 1. Objetivo General
+Centralizar la lógica de cálculo en el servidor para aligerar la carga del frontend y reducir el número de peticiones HTTP necesarias para pintar el Dashboard inicial.
+
+---
+
+## 2. Nuevos Endpoints Propuestos
+
+### A. Resumen Mensual con Comparativa
+Este endpoint entregará los datos para las "Tarjetas" superiores, incluyendo el cálculo de variación con el mes anterior.
+
+**Endpoint:** `GET /dashboard/summary`
+**Query Params:** `?month=X&year=Y` (Default: mes actual)
+
+**Respuesta Esperada:**
+```json
+{
+  "period": { "month": 12, "year": 2025 },
+  "summary": {
+    "income": {
+      "total": 1500000,
+      "previousMonth": 1400000,
+      "variationPercentage": 7.14, // ( (Actual - Anterior) / Anterior ) * 100
+      "trend": "up" // "up" | "down" | "equal"
+    },
+    "expense": {
+      "total": 800000,
+      "previousMonth": 900000,
+      "variationPercentage": -11.11,
+      "trend": "down" // Idealmente queremos que bajen los gastos
+    },
+    "debt": {
+      "totalPayment": 200000, // Suma de cuotas para este mes
+      "pendingCount": 3       // Cantidad de deudas activas
+    },
+    "balance": {
+      "total": 500000, // Income - (Expense + Debt)
+      "status": "positive" // "positive" | "negative" | "warning"
+    }
+  }
+}
+```
+
+### B. Distribución de Gastos (Gráfico Torta)
+Endpoint para agrupar gastos por categoría en un periodo dado.
+
+**Endpoint:** `GET /dashboard/category-distribution`
+**Query Params:** `?month=X&year=Y`
+
+**Respuesta Esperada:**
+```json
+{
+  "total": 800000,
+  "categories": [
+    { "id": 1, "name": "Alimentación", "total": 400000, "percentage": 50.0, "color": "#FF5733" },
+    { "id": 2, "name": "Transporte", "total": 200000, "percentage": 25.0, "color": "#33FF57" },
+    { "id": 5, "name": "Ocio", "total": 200000, "percentage": 25.0, "color": "#3357FF" }
+  ]
+}
+```
+
+### C. Historial Semestral (Gráfico Barras)
+Datos para comparar la evolución de Ingresos vs. Gastos vs. Pagos de Deuda en los últimos 6 meses.
+
+**Endpoint:** `GET /dashboard/history`
+**Query Params:** `?months=6` (Default: 6)
+
+**Respuesta Esperada:**
+```json
+{
+  "history": [
+    { "month": 7, "year": 2025, "income": 1400000, "expense": 800000, "debt": 200000 },
+    { "month": 8, "year": 2025, "income": 1450000, "expense": 850000, "debt": 200000 },
+    // ... hasta el mes actual
+    { "month": 12, "year": 2025, "income": 1500000, "expense": 800000, "debt": 200000 }
+  ]
+}
+```
+
+---
+
+## 3. Lógica de Negocio Requerida
+
+### Cálculo de Cuotas de Deuda (Critical)
+Para el campo `debt.totalPayment` en el resumen:
+1.  **Iterar** sobre todas las deudas activas.
+2.  **Calcular** si una cuota cae en el `month/year` solicitado.
+    *   *Opción A (Simple):* Si la deuda inició en Enero 2024 con 12 cuotas, afecta a Enero..Diciembre 2024. Calcular monto mensual (Total / Cuotas) y sumar si corresponde.
+    *   *Opción B (Robusta):* Si tienes una tabla `debt_installments` (tabla de cuotas generadas), simplemente haz una `SUM(amount)` donde `due_date` sea del mes consultado.
+
+### Cálculo de Variación (Trend)
+1.  Obtener totales del mes solicitado (Mes `M`).
+2.  Obtener totales del mes anterior (Mes `M-1`).
+    *   *Nota:* Si `M=1` (Enero), el mes anterior es `12` (Diciembre) del año `Y-1`.
+3.  Aplicar fórmula de variación porcentual. Evitar división por cero si el mes anterior fue 0.
+
+---
+
+## 4. Pasos Sugeridos para Implementación
+
+1.  **Crear Controladores**: Crea `DashboardController` en tu backend.
+2.  **DTOs (Data Transfer Objects)**: Define las estructuras de respuesta JSON para asegurar consistencia.
+3.  **Servicios**:
+    *   Implementar `getMonthlySummary(userId, month, year)`.
+    *   Implementar `getCategoryDistribution(userId, month, year)`.
+    *   Implementar `getSixMonthHistory(userId)`.
+4.  **Optimización SQL**:
+    *   Usa funciones de agregación (`SUM`, `groupBy`) de tu base de datos (SQL/NoSQL) en lugar de traer todos los registros y sumar en código, para mejor rendimiento.
+
+## 5. Siguientes Pasos (Frontend)
+Una vez estos endpoints estén listos, en Flutter podremos:
+*   Reemplazar las 4 llamadas individuales (`getIncomes`, [getExpenses](file:///d:/app/flutter_application_1/lib/services/expense_service.dart#87-125)...) por una sola `getDashboardSummary`.
+*   Usar una librería como `fl_chart` para renderizar los JSONs de distribución e historial.
