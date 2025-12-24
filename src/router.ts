@@ -17,5 +17,6 @@ router.use('/bank', routes.bank);
 router.use('/credit-card', routes.creditCard);
 router.use('/dashboard', routes.dashboard);
 router.use('/inventory', routes.inventory);
+router.use('/reports', routes.reports);
 
 

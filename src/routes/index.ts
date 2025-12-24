@@ -12,6 +12,7 @@ import debt from './debt';
 import bank from './bank';
 import creditCard from './creditCard';
 import dashboard from './dashboard';
+import reports from './reports';
 
 export const routes = {
   root,
@@ -28,4 +29,5 @@ export const routes = {
   bank,
   creditCard,
   dashboard,
+  reports,
 };
